@@ -9,6 +9,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Existing service configurations
 
+builder.Services.AddDbContext<IdentityDbContext>(options =>
+    options.UseInMemoryDatabase("AuthDemoDB"));
+
+builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+    .AddEntityFrameworkStores<IdentityDbContext>();
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Events.OnRedirectToLogin = context =>
@@ -22,12 +28,6 @@ builder.Services.ConfigureApplicationCookie(options =>
         return Task.CompletedTask;
     };
 });
-
-builder.Services.AddDbContext<IdentityDbContext>(options =>
-    options.UseInMemoryDatabase("AuthDemoDB"));
-
-builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-    .AddEntityFrameworkStores<IdentityDbContext>();
 
 builder.Services.AddCors();
 
@@ -101,13 +101,13 @@ app.MapPost("/api/assign-role", async (UserManager<IdentityUser> userManager) =>
     var user = new IdentityUser { UserName = "testuser@example.com", Email = "testuser@example.com" };
     await userManager.CreateAsync(user, "Test@1234");
     await userManager.AddToRoleAsync(user, "Admin");
-    
+
     // Check if the user is in the Admin role
     var isInRole = await userManager.IsInRoleAsync(user, "Admin");
 
-    
-    
-    return isInRole 
+
+
+    return isInRole
         ? Results.Ok("User created and successfully assigned to Admin role")
         : Results.BadRequest("User created but failed to assign Admin role");
 });
@@ -123,7 +123,7 @@ app.MapPost("/api/add-claim", async (UserManager<IdentityUser> userManager) =>
     var claims = await userManager.GetClaimsAsync(user);
     var hasITClaim = claims.Any(c => c.Type == "Department" && c.Value == "IT");
 
-    return hasITClaim 
+    return hasITClaim
         ? Results.Ok("Claim added and verified on user")
         : Results.BadRequest("Claim addition failed");
 });
